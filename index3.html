@@ -1,0 +1,104 @@
+
+<!doctype html>
+
+<html lang="en">
+	<head>
+		<title>GET VIDEO</title>
+		<meta charset="utf-8">
+	</head>
+
+	<body>
+	<input type="button" title="开启摄像头" value="开启摄像头" onclick="getMedia()" />
+	<video id="video" width="299px" height="299px" autoplay="autoplay"></video>
+	<canvas id="canvas" width="299px" height="299px"></canvas>
+    <button id="snap" onclick="takePhoto()">拍照</button>
+    <div class="result">
+            <h5>识别结果：</h5>
+            <h5 id="result"></h5>
+    </div>
+    <div id="show"style="width:200px; height:200px; border:1px solid"></div>
+
+
+	<script>
+
+        var result=document.getElementById('result')
+
+            //===================建立websocket连接===============
+        var host="ws://"+window.location.host+"/connect";
+        var ws=new WebSocket(host);
+        ws.onopen=function(){
+            alert("服务器连接已建立！");
+        }
+        ws.onmessage=function(event){
+            var msg=event.data;
+            result.innerHTML=msg;
+            alert("识别成功！\n结果： "+msg);
+        }
+        ws.onclose=function(){
+            alert("服务器连接已断开，请检查服务器！");
+        }
+
+        // Converts canvas to an image
+        function convertCanvasToImage(canvas) {
+            var image = new Image();
+            image.src = canvas.toDataURL("image/png");
+            return image;
+        }
+
+        function getMedia() {
+            let constraints = {
+                video: {width: 500, height: 500},
+                audio: true
+            };
+            //获得video摄像头区域
+            let video = document.getElementById("video");
+            //这里介绍新的方法，返回一个 Promise对象
+            // 这个Promise对象返回成功后的回调函数带一个 MediaStream 对象作为其参数
+            // then()是Promise对象里的方法
+            // then()方法是异步执行，当then()前的方法执行完后再执行then()内部的程序
+            // 避免数据没有获取到
+            let promise = navigator.mediaDevices.getUserMedia(constraints);
+            promise.then(function (MediaStream) {
+                video.srcObject = MediaStream;
+                video.play();
+            });
+        }
+
+        function takePhoto() {
+            //获得Canvas对象
+            let video = document.getElementById("video");
+            let canvas = document.getElementById("canvas");
+            let ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, 299, 299);
+
+            var image = convertCanvasToImage(canvas);
+            document.getElementById("show").appendChild(image);
+
+            //var tempcanvas = document.createElement("canvas");
+            //tempcanvas.width=299;
+            //tempcanvas.height=299;
+            //var tempctx = tempcanvas.getContext('2d');
+
+            var sendData=ctx.getImageData(0,0,299,299).data;
+            var json={"imgData":sendData};
+            var str=JSON.stringify(json);
+            ws.send(str);
+            ctx.clearRect(0,0,299,299);
+            /*
+            
+            //截取区域放入临时canvas
+            ///tempctx.putImageData(imageData,0,0);
+            //用websocket发送图片数据
+            //var sendData=tempctx.getImageData(0,0,28,28).data;
+            //var json={"imgData":sendData};
+            var json={"imgData":image};
+            var str=JSON.stringify(json);
+            ws.send(str);
+            //清除tempcanvas
+            ctx.clearRect(0,0,28,28);
+            */
+        }
+
+</script>
+</body>
+</html>

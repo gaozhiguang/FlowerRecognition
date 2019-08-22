@@ -1,0 +1,17 @@
+<!doctype html>
+
+<html lang="en">
+	<head>
+		<title>GET VIDEO</title>
+		<meta charset="utf-8">
+    </head>
+    <input type="file" accept="image/*" capture="camera" name="camera" id="camera">
+    <canvas id="canvas" width="299px" height="299px"></canvas>
+    <img id="image" width="300" height="200" />
+</html>
+<script>
+    var file = document.getElementById("camera").files[0];
+    var canvas=document.getElementById("canvas");
+    var ctx=canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, 299, 299);
+</Script>

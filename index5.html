@@ -1,0 +1,57 @@
+<html>   
+    <head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    </head>
+        
+    <script>
+        //===================建立websocket连接===============
+        var host="ws://"+window.location.host+"/connect";
+        var ws=new WebSocket(host);
+        ws.onopen=function(){
+            alert("服务器连接已建立！");
+        }
+        ws.onmessage=function(event){
+            var msg=event.data;
+            result.innerHTML=msg;
+            alert("识别成功！\n结果： "+msg);
+        }
+        ws.onclose=function(){
+            alert("服务器连接已断开，请检查服务器！");
+        }
+
+        var canvas=document.getElementById("canvas");
+        var ctx=canvas.getContext("2d");
+        function onTake(){	
+            var file = document.getElementById("btn_camera").files[0];  
+            var reader = new FileReader();
+            reader.onload=function(e) {  
+                var img =  document.getElementById("image");
+                img.src =  e.target.result;
+                ctx.drawImage(img, 0, 0, 299, 299);
+                var sendData=ctx.getImageData(0,0,299,299).data;
+                var json={"imgData":sendData};
+                var str=JSON.stringify(json);
+                ws.send(str);
+                //document.getElementById("image").src = e.target.result;	
+            }
+            reader.readAsDataURL(file);
+            /*
+            var img1 = new Image();
+            ctx.drawImage(img1, 0, 0, 299, 299);
+            */
+        }
+    </script>
+    <body>
+        <p>open camer demo</p>
+        <canvas id="canvas" width="299px" height="299px"></canvas>
+        <form id="take_picture">
+            <input id="btn_camera" type="file" accept="image/*" capture="camera" onchange="onTake()" />
+        </form>
+        <img id="image" width="300" height="200" /> 
+        <div class="result">
+                <h5>识别结果：</h5>
+                <h5 id="result"></h5>
+        </div>
+    </body>
+</html>
+        

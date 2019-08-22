@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-CN" id="index">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="format-detection" content="telephone=no, email=no" />
+<meta name="keywords" content="">
+<meta name="description" content="">
+<title>图片裁剪</title>
+<style>
+body {
+	margin: 0;
+	text-align: center;
+}
+h2 {text-align: center; line-height: 60px; font-size: 24px; color: #625f5f;}
+#clipArea {
+	height: 460px;
+}
+#file,
+#clipBtn {
+	margin: 20px;
+}
+#view {
+	margin: 0 auto;
+	width: 200px;
+	height: 200px;
+}
+
+.reading h2 {width: 100%; margin: 40px 0; text-align: center;	line-height: 2; font-size: 20px; color: #59595b;}
+.reading h2 a {text-decoration: none; color: #59595b;}
+.reading h2 a:hover {color: #2183f1;}
+</style>
+</head>
+<body>
+<h2>上传图片可裁剪-photoClip.js</h2>
+<div id="clipArea"></div>
+<input type="file" id="file">
+<button id="clipBtn">截取</button>
+<button id='recognize'>识别图片</button>
+<div id="view"></div>
+<div>
+	<!--识别结果-->
+	<h5>花卉识别结果：</h5>
+	<h5 id='result'></h5>
+</div>
+<div class="reading">
+	<h2>收集整理：<a href="http://www.qkhtml.com/">切客网（Qkhtml.com）</a></h2>
+</div>
+<script src="http://www.jq22.com/jquery/2.1.1/jquery.min.js"></script>
+<script src="static/js/iscroll-zoom.js"></script>
+<script src="static/js/hammer.js"></script>
+<script src="static/js/lrz.all.bundle.js"></script>
+<script src="static/js/jquery.photoClip.js"></script>
+<script>
+
+
+    //识别结果id的获取
+    var result=document.getElementById('result');
+    //按钮id的获取
+    var recognize_btn=document.getElementById('recognize');
+    //图片base-64编码的申明
+    var mydataUrl;
+    //===========窗口加载完成时后执行的操作================
+	window.onload=function(){
+    	//===============建立websocket连接=====================
+         var host="ws://"+window.location.host+"/connect";
+         //WebSocket 对象提供了用于创建和管理 WebSocket 连接，以及可以通过该连接发送和接收数据的 API。
+         //创建一个websocket连接
+         var ws=new WebSocket(host);
+         //打开websocket连接
+         ws.onopen=function(){
+            alert('网络已连接');
+         }
+         //发送消息
+         ws.onmessage=function(event){
+            var msg=event.data;
+            result.innerHTML=msg;
+            alert('识别成功!\n结果：'+msg);
+         }
+         //关闭websocket连接
+         ws.onclose=function(){
+            alert("网络已断开");
+		 }
+		
+		//===============识别按钮操作========================
+		recognize_btn.addEventListener('click',function(event){
+			result.innerHTML="识别中请稍后......"
+			//将图片数据转变成JSON数据
+			// var json={'imgData':dataUrl};
+			// //将JSON数据转变成字符串
+			// var str=JSON.stringify(json);
+			//发送字符串
+			//dataUrl=clipArea.dataUrl;
+			ws.send(mydataUrl);
+		})
+	}
+
+
+//document.addEventListener('touchmove', function (e) { e.preventDefault(); }, false);
+var clipArea = new bjj.PhotoClip("#clipArea", {
+	size: [300, 300],// 截取框的宽和高组成的数组。默认值为[260,260]
+	outputSize: [299, 299],	// 输出图像的宽和高组成的数组。默认值为[0,0]，表示输出图像原始大小
+	file: "#file",   // 上传图片的 type="file">控件的选择器或者DOM对象
+	view: "#view",   // 显示截取后图像的容器的选择器或者DOM对象
+	ok: "#clipBtn",  // 确认截图按钮的选择器或者DOM对象
+	// 开始加载的回调函数。this指向 fileReader 对象，并将正在加载的 file 对象作为参数传入
+	loadStart: function() {
+		console.log("照片读取中");
+	},
+	// 加载完成的回调函数。this指向图片对象，并将图片地址作为参数传入
+	loadComplete: function() {
+		console.log("照片读取完成");
+	},
+	// 裁剪完成的回调函数。this指向图片对象，会将裁剪出的图像数据DataURL作为参数传入
+	clipFinish: function(dataURL) {
+		console.log(dataURL);
+		mydataUrl=dataURL;
+	}
+});
+//clipArea.destroy();
+</script>
+
+</body>
+</html>

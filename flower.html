@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>花卉识别</title>
+      <meta charset="utf-8">
+	</head>
+
+	<body>
+      <div class="camera">
+         <!--在手机端是打开相机进行拍照，而在pc浏览器端是选择文件，如果是video标签，则手机端显示不了，电脑端可以-->
+         <input type="file" accept="image/*;" capture="camera" id="photo"  value="拍照">
+      </div>
+
+      <div>
+         <!--Canvas画布，用来显示拍摄的图片-->
+         <canvas id="Canvas" width=299 height=299></canvas>
+      </div>
+      <div>
+         <!--识别按钮-->
+         <button id='recognize'>
+            识别图片
+         </button>
+      </div>
+      <div>
+         <!--识别结果-->
+         <h5>花卉识别结果：</h5>
+         <h5 id='result'></h5>
+      </div>
+      <div>
+         <!--临时画布，用来显示截取的图片-->
+      <canvas id="tempCanvas" aria-disabled="false"></canvas>
+      </div>
+
+
+      <script> 
+         //===============初始化画布和相机========================
+         //主画板的id获取
+		   var cvs = document.getElementById('Canvas');
+		   var ctx = cvs.getContext('2d');
+         //识别结果id的获取
+         var result=document.getElementById('result');
+         //按钮id的获取
+         var recognize_btn=document.getElementById('recognize');
+         //图片base-64编码的申明
+         //var dataUrl;
+         //保存canvas中提取出的数据
+         var sendData;
+         //===========窗口加载完成时后执行的操作================
+		   window.onload=function(){
+         //===============建立websocket连接=====================
+         var host="ws://"+window.location.host+"/connect";
+         //WebSocket 对象提供了用于创建和管理 WebSocket 连接，以及可以通过该连接发送和接收数据的 API。
+         //创建一个websocket连接
+         var ws=new WebSocket(host);
+         //打开websocket连接
+         ws.onopen=function(){
+            alert('网络已连接');
+         }
+         //发送消息
+         ws.onmessage=function(event){
+            var msg=event.data;
+            result.innerHTML=msg;
+            alert('识别成功!\n结果：'+msg);
+         }
+         //关闭websocket连接
+         ws.onclose=function(){
+            alert("网络已断开");
+         }
+         //===============获取文件流=============================
+         document.getElementById('photo').addEventListener('change', function() {
+            //不管文件域是用何种方式打开的，都可以在change中捕获到
+            //创建一个FileReader对象，调用readAsDataURL()方法把文件转换为base64图像编码
+            var reader = new FileReader();
+            //onload()是一个异步回调，当文件读取完执行该方法内代码。
+            reader.onload = function (e) {
+               compress(this.result);};
+            reader.readAsDataURL(this.files[0]);
+         }, false);
+         //===============具体图片的压缩操作======================
+         var compress = function (res) {
+            var img = new Image();
+            //maxH = 160;
+            maxH=300;
+            img.onload = function () {
+               if(img.height > maxH){
+                  img.height = maxH;
+                  img.width = maxH;
+               }
+               //if(img.height > maxH) {
+                  //img.width *= maxH / img.height;
+                  //img.height = maxH;
+               //}
+               //cvs.width = img.width;
+               //cvs.height = img.height;
+               ctx.clearRect(0, 0, cvs.width, cvs.height);
+               ctx.drawImage(img, 0, 0, img.width, img.height);
+               //dataUrl = cvs.toDataURL('image/jepg',0.9);//返回base64图像编码
+               sendData=ctx.getImageData(0,0,299,299).data;
+               
+            }
+            img.src = res;
+         }
+
+         //===============识别按钮操作========================
+         recognize_btn.addEventListener('click',function(event){
+            result.innerHTML="识别中请稍后......"
+            //将图片数据转变成JSON数据
+            // var json={'imgData':dataUrl};
+            // //将JSON数据转变成字符串
+            // var str=JSON.stringify(json);
+            //发送字符串
+            //ws.send(dataUrl);
+
+            var json={"imgData":sendData};
+            var str=JSON.stringify(json);
+            ws.send(str);
+         })
+         }
+      </script>
+</body>
